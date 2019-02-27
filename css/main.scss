@@ -9,3 +9,126 @@ html, body {
     width: 100%;
     overflow: hidden;
 }
+
+body {
+    font-family: sans-serif;
+}
+
+main {
+    display: flex;
+    flex-flow: row wrap;
+    height: 100%;
+}
+
+#canvas-wrapper {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex: 1;
+    overflow: hidden;
+}
+
+#ui-wrapper {
+    width: 50%;
+
+    .functions {
+        padding: 20px;
+        display: flex;
+        flex-flow: column wrap;
+        justify-content: center;
+        align-items: center;
+
+        .function {
+            display: flex;
+
+            &:not(:last-child) {
+                margin-bottom: 8px;
+            }
+
+            .step {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                width: 40px;
+                height: 40px;
+                margin-left: 1px;
+                cursor: pointer;
+                outline: 1px solid black;
+
+                &.selected {
+                    outline: 3px solid black;
+                }
+            }
+        }
+    }
+
+    .tools {
+        .row {
+            display: flex;
+            justify-content: center;
+
+            > div {
+                width: 40px;
+                height: 40px;
+                margin: 8px;
+                border: 1px solid black;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                cursor: pointer;
+
+                &.color {
+
+                }
+            }
+        }
+    }
+}
+
+[data-color="green"] {
+    background-color: #4caf50;
+}
+
+[data-color="blue"] {
+    background-color: #2196f3;
+}
+
+[data-color="orange"] {
+    background-color: #ffc107;
+}
+
+[data-tool="forward"] {
+    &::after {
+        content: "^";
+    }
+}
+
+[data-tool="right"] {
+    &::after {
+        content: ">";
+    }
+}
+
+[data-tool="left"] {
+    &::after {
+        content: "<";
+    }
+}
+
+[data-tool="paint"] {
+    &::after {
+        content: "p";
+    }
+}
+
+[data-tool="f1"] {
+    &::after {
+        content: "f1";
+    }
+}
+
+[data-tool="f2"] {
+    &::after {
+        content: "f2";
+    }
+}
