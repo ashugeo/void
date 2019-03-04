@@ -16,6 +16,7 @@ let selectedCell = {};
 let map;
 let hero;
 
+let playing = false;
 
 function preload() {
     const data = loadJSON('data/map1.json', () => {
@@ -149,6 +150,7 @@ function loadFuncs() {
         funcs.push(func)
     });
 
+    playing = true;
     buildTimeline(funcs[0]);
 }
 
@@ -180,11 +182,22 @@ function funcToHtml(func) {
 function play($timeline, timeline) {
     const step = timeline[0];
 
-    if (step.color === 0 || step.color === board.find(c => c.x === hero.x && c.y === hero.y).color) {
-        if (step.tool === 'forward') hero.forward();
-        else if (step.tool === 'right') hero.right();
-        else if (step.tool === 'left') hero.left();
-        else if (step.tool === 'f1') {
+    let cell = board.find(c => c.x === hero.x && c.y === hero.y);
+    if (step.color === 0 || step.color === cell.color) {
+        if (step.tool === 'forward') {
+            hero.forward();
+            cell = board.find(c => c.x === hero.x && c.y === hero.y);
+            if (!cell.color) lost();
+            if (cell.star) {
+                cell.star = false;
+                const stars = board.filter(c => c.star)
+                if (stars.length === 0) won();
+            }
+        } else if (step.tool === 'right') {
+            hero.right();
+        } else if (step.tool === 'left') {
+            hero.left();
+        } else if (step.tool === 'f1') {
             timeline.splice(1, 0, ...funcs[0]);
             $('.timeline .step:first-child').after(funcToHtml(funcs[0]));
         }
@@ -192,14 +205,22 @@ function play($timeline, timeline) {
 
     timeline.shift();
     setTimeout(() => {
-        $('.timeline .step:first-child').remove();
-        if (timeline.length) play($timeline, timeline);
-        else lost();
+        if (playing) {
+            $('.timeline .step:first-child').remove();
+            if (timeline.length) play($timeline, timeline);
+            else lost();
+        }
     }, 1000);
+}
+
+function won() {
+    console.log('won');
+    playing = false;
 }
 
 function lost() {
     console.log('lost');
+    playing = false;
 }
 
 $(document).on('click', '.functions .step', e => {
