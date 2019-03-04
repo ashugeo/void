@@ -51,6 +51,7 @@ main {
 
                 &.selected {
                     outline: 3px solid black;
+                    z-index: 1;
                 }
             }
         }
@@ -64,6 +65,11 @@ main {
 
         .step {
             flex: 0 0 40px;
+
+            &:first-child {
+                outline: 3px solid black;
+                z-index: 1;
+            }
         }
     }
 
@@ -91,10 +97,6 @@ main {
                 justify-content: center;
                 align-items: center;
                 cursor: pointer;
-
-                &.color {
-
-                }
             }
         }
     }

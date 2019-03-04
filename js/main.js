@@ -6,18 +6,20 @@ const debug = false;
 
 const colors = ['#dddddd', '#4caf50', '#2196f3', '#ffc107'];
 
-let cells = [];
+const board = [];
+const funcs = [];
 
 let hoveredCell = {};
 let clickedCell = {};
 let selectedCell = {};
 
-let board;
+let map;
 let hero;
+
 
 function preload() {
     const data = loadJSON('data/map1.json', () => {
-        board = data.board;
+        map = data.map;
         hero = new Hero(data.hero.pos.x, data.hero.pos.y, data.hero.dir);
     });
 }
@@ -28,7 +30,7 @@ function setup() {
 
     for (let y = 0; y < rows; y += 1) {
         for (let x = 0; x < cols; x += 1) {
-            cells.push(new Cell(x, y, board[y] ? board[y][x] : false));
+            board.push(new Cell(x, y, map[y] ? map[y][x] : false));
         }
     }
 }
@@ -43,7 +45,7 @@ function draw() {
     oY = height / 2 - cols * gridSize / 2;
 
     translate(oX, oY);
-    for (const cell of cells) cell.display();
+    for (const cell of board) cell.display();
     hero.display();
 }
 
@@ -131,7 +133,6 @@ function star(x, y, radius1, radius2, npoints) {
 
 function loadFuncs() {
     const $functions = $('.functions');
-    const funcs = [];
 
     $functions.find('.function').each((id, el) => {
         const $function = $(el);
@@ -141,29 +142,22 @@ function loadFuncs() {
             const $step = $(el);
 
             const tool = $step.attr('data-tool');
-            const color = parseInt($step.attr('data-color'));
+            const color = parseInt($step.attr('data-color')) | 0;
 
             func.push({ tool, color });
         });
         funcs.push(func)
     });
 
-    loadFunc(funcs[0]);
+    buildTimeline(funcs[0]);
 }
 
-function loadFunc(func) {
+function buildTimeline(func) {
     const $timeline = $('.timeline');
     $timeline.empty();
-    for (const step of func) {
-        $timeline.append(`<div class="step" data-tool="${step.tool}" data-color="${step.color}"></div>`);
-    }
+    $timeline.html(funcToHtml(func));
 
-    buildTimeline($timeline)
-}
-
-function buildTimeline($timeline) {
     const timeline = [];
-
     $timeline.find('.step').each((id, el) => {
         const $step = $(el);
 
@@ -172,23 +166,40 @@ function buildTimeline($timeline) {
         timeline.push({ tool, color });
     });
 
-    play(timeline);
+    if (timeline[0]) play($timeline, timeline);
 }
 
-function play(timeline) {
+function funcToHtml(func) {
+    html = '';
+    for (const step of func) {
+        if (step.tool) html += `<div class="step" data-tool="${step.tool}" data-color="${step.color}"></div>`;
+    }
+    return html;
+}
+
+function play($timeline, timeline) {
     const step = timeline[0];
 
-    if (step.color === 0 || step.color === cells.find(c => c.x === hero.x && c.y === hero.y).color) {
+    if (step.color === 0 || step.color === board.find(c => c.x === hero.x && c.y === hero.y).color) {
         if (step.tool === 'forward') hero.forward();
         else if (step.tool === 'right') hero.right();
         else if (step.tool === 'left') hero.left();
+        else if (step.tool === 'f1') {
+            timeline.splice(1, 0, ...funcs[0]);
+            $('.timeline .step:first-child').after(funcToHtml(funcs[0]));
+        }
     }
 
     timeline.shift();
     setTimeout(() => {
         $('.timeline .step:first-child').remove();
-        if (timeline.length) play(timeline);
+        if (timeline.length) play($timeline, timeline);
+        else lost();
     }, 1000);
+}
+
+function lost() {
+    console.log('lost');
 }
 
 $(document).on('click', '.functions .step', e => {
