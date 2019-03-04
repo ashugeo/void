@@ -29,10 +29,11 @@ main {
 }
 
 #ui-wrapper {
+    padding: 16px;
     width: 50%;
 
     .functions {
-        padding: 20px;
+        padding: 16px;
         display: flex;
         flex-flow: column wrap;
         justify-content: center;
@@ -46,20 +47,34 @@ main {
             }
 
             .step {
-                display: flex;
-                justify-content: center;
-                align-items: center;
-                width: 40px;
-                height: 40px;
-                margin-left: 1px;
                 cursor: pointer;
-                outline: 1px solid black;
 
                 &.selected {
                     outline: 3px solid black;
                 }
             }
         }
+    }
+
+    .timeline {
+        height: 72px;
+        display: flex;
+        padding: 16px;
+        overflow: hidden;
+
+        .step {
+            flex: 0 0 40px;
+        }
+    }
+
+    .step {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 40px;
+        height: 40px;
+        margin-left: 1px;
+        outline: 1px solid black;
     }
 
     .tools {
@@ -85,15 +100,15 @@ main {
     }
 }
 
-[data-color="green"] {
+[data-color="1"] {
     background-color: #4caf50;
 }
 
-[data-color="blue"] {
+[data-color="2"] {
     background-color: #2196f3;
 }
 
-[data-color="orange"] {
+[data-color="3"] {
     background-color: #ffc107;
 }
 

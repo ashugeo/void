@@ -31,7 +31,6 @@ function setup() {
             cells.push(new Cell(x, y, board[y] ? board[y][x] : false));
         }
     }
-
 }
 
 function draw() {
@@ -56,22 +55,35 @@ class Hero {
     }
 
     display() {
-        rect(gridSize / 2 + this.x, gridSize / 2 + this.y, 10, 10);
+        push();
+        translate((1 / 2 + this.x) * gridSize, (1 / 2 + this.y) * gridSize);
+        rotate(radians(this.dir * 90));
+        triangle(0, -10, -10, 10, 10, 10);
+        pop();
     }
 
-    walk() {
-        // this.x += [][this.dir]
+    forward() {
+        this.x += [0, 1, 0, -1][this.dir];
+        this.y += [-1, 0, 1, 0][this.dir];
+    }
+
+    right() {
+        this.dir += 1;
+    }
+
+    left() {
+        this.dir -= 1;
     }
 }
 
 class Cell {
-    constructor(x, y, type) {
+    constructor(x, y, color) {
         this.x = x;
         this.y = y;
 
-        if (type && type !== '') {
-            this.type = parseInt(type.match(/\d/)[0]);
-            this.star = !!type.match(/[s]/);
+        if (color && color !== '') {
+            this.color = parseInt(color.match(/\d/)[0]);
+            this.star = !!color.match(/[s]/);
         }
     }
 
@@ -82,15 +94,14 @@ class Cell {
         push();
         translate(x, y);
 
-        if (this.type !== undefined) {
-            fill(colors[this.type]);
+        if (this.color !== undefined) {
+            fill(colors[this.color]);
             rect(0, 0, gridSize, gridSize);
         }
 
         if (this.star) {
             fill('#faf030');
-            stroke('#7a7010');
-            star(gridSize / 2, gridSize / 2, 5, 15, 5);
+            star(gridSize / 2, gridSize / 2, 5, 12, 5);
         }
 
         if (debug) {
@@ -118,7 +129,69 @@ function star(x, y, radius1, radius2, npoints) {
     endShape(CLOSE);
 }
 
-$(document).on('click', '.step', e => {
+function loadFuncs() {
+    const $functions = $('.functions');
+    const funcs = [];
+
+    $functions.find('.function').each((id, el) => {
+        const $function = $(el);
+        const func = [];
+
+        $function.find('.step').each((id, el) => {
+            const $step = $(el);
+
+            const tool = $step.attr('data-tool');
+            const color = parseInt($step.attr('data-color'));
+
+            func.push({ tool, color });
+        });
+        funcs.push(func)
+    });
+
+    loadFunc(funcs[0]);
+}
+
+function loadFunc(func) {
+    const $timeline = $('.timeline');
+    $timeline.empty();
+    for (const step of func) {
+        $timeline.append(`<div class="step" data-tool="${step.tool}" data-color="${step.color}"></div>`);
+    }
+
+    buildTimeline($timeline)
+}
+
+function buildTimeline($timeline) {
+    const timeline = [];
+
+    $timeline.find('.step').each((id, el) => {
+        const $step = $(el);
+
+        const tool = $step.attr('data-tool');
+        const color = parseInt($step.attr('data-color')) | 0;
+        timeline.push({ tool, color });
+    });
+
+    play(timeline);
+}
+
+function play(timeline) {
+    const step = timeline[0];
+
+    if (step.color === 0 || step.color === cells.find(c => c.x === hero.x && c.y === hero.y).color) {
+        if (step.tool === 'forward') hero.forward();
+        else if (step.tool === 'right') hero.right();
+        else if (step.tool === 'left') hero.left();
+    }
+
+    timeline.shift();
+    setTimeout(() => {
+        $('.timeline .step:first-child').remove();
+        if (timeline.length) play(timeline);
+    }, 1000);
+}
+
+$(document).on('click', '.functions .step', e => {
     const $el = $(e.target);
     $('.step.selected').removeClass('selected');
     $el.addClass('selected');
@@ -136,10 +209,17 @@ $(document).on('click', '.color', e => {
 
 $(document).on('click', '.tool', e => {
     const $el = $(e.target);
-    const tool = $el.attr('data-tool')
+    const tool = $el.attr('data-tool');
     if ($('.step.selected').attr('data-tool') === tool) {
         $('.step.selected').attr('data-tool', '');
     } else {
         $('.step.selected').attr('data-tool', tool);
     }
+});
+
+$(document).on('click', '.action', e => {
+    const $el = $(e.target);
+    const action = $el.attr('data-action');
+
+    if (action === 'play') loadFuncs();
 });
