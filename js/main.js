@@ -66,8 +66,8 @@ function draw() {
     background(255);
     noFill();
 
-    oX = Math.floor(width / 2 - rows * gridSize / 2);
-    oY = Math.floor(height / 2 - cols * gridSize / 2);
+    const oX = Math.floor(width / 2 - cols * gridSize / 2);
+    const oY = Math.floor(height / 2 - rows * gridSize / 2);
 
     translate(oX, oY);
     for (const cell of board) cell.display();
