@@ -22,6 +22,27 @@ function preload() {
     const data = loadJSON('data/map1.json', () => {
         map = data.map;
         hero = new Hero(data.hero.pos.x, data.hero.pos.y, data.hero.dir);
+
+        const $functions = $('.functions');
+        for (const func of data.funcs) {
+            $functions.append(`<div class="function">${'<div class="step"></div>'.repeat(func)}<div>`);
+        }
+
+        const $tools = $('.tools');
+
+        let tools = '<div class="row">';
+        for (const tool of data.tools) {
+            tools += `<div class="tool" data-tool="${tool}"></div>`;
+        }
+        tools += '</div>';
+        $tools.append(tools);
+
+        let colors = '<div class="row">';
+        for (const color of data.colors) {
+            colors += `<div class="color" data-color="${color}"></div>`;
+        }
+        colors += '</div>';
+        $tools.append(colors);
     });
 }
 
