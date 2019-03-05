@@ -1,6 +1,6 @@
 const gridSize = 40;
-const rows = 10;
-const cols = 10;
+let rows;
+let cols;
 
 const debug = false;
 
@@ -29,6 +29,9 @@ function setup() {
     const canvas = createCanvas(window.innerWidth / 2, window.innerHeight);
     canvas.parent('canvas-wrapper');
 
+    rows = map.length;
+    cols = map[0].length;
+
     for (let y = 0; y < rows; y += 1) {
         for (let x = 0; x < cols; x += 1) {
             board.push(new Cell(x, y, map[y] ? map[y][x] : false));
@@ -42,8 +45,8 @@ function draw() {
     background(255);
     noFill();
 
-    oX = width / 2 - rows * gridSize / 2;
-    oY = height / 2 - cols * gridSize / 2;
+    oX = Math.floor(width / 2 - rows * gridSize / 2);
+    oY = Math.floor(height / 2 - cols * gridSize / 2);
 
     translate(oX, oY);
     for (const cell of board) cell.display();
@@ -64,6 +67,7 @@ class Hero {
         push();
         translate((1 / 2 + this.x) * gridSize, (1 / 2 + this.y) * gridSize);
         rotate(radians(this.dir * 90));
+        fill(255);
         triangle(0, -10, -10, 10, 10, 10);
         pop();
     }
@@ -111,7 +115,7 @@ class Cell {
             rect(0, 0, gridSize, gridSize);
         }
 
-        if (this.star) {
+        if (this.star && !this.starClear) {
             fill('#faf030');
             star(gridSize / 2, gridSize / 2, 5, 12, 5);
         }
