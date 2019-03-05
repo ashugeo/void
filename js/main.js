@@ -7,7 +7,7 @@ const debug = false;
 const colors = ['#dddddd', '#4caf50', '#2196f3', '#ffc107'];
 
 const board = [];
-const funcs = [];
+let funcs;
 
 let hoveredCell = {};
 let clickedCell = {};
@@ -55,6 +55,9 @@ class Hero {
         this.x = x;
         this.y = y;
         this.dir = dir;
+        this.startX = x;
+        this.startY = y;
+        this.startDir = dir;
     }
 
     display() {
@@ -76,6 +79,12 @@ class Hero {
 
     left() {
         this.dir -= 1;
+    }
+
+    reset() {
+        this.x = this.startX;
+        this.y = this.startY;
+        this.dir = this.startDir;
     }
 }
 
@@ -134,6 +143,7 @@ function star(x, y, radius1, radius2, npoints) {
 
 function loadFuncs() {
     const $functions = $('.functions');
+    funcs = [];
 
     $functions.find('.function').each((id, el) => {
         const $function = $(el);
@@ -168,7 +178,9 @@ function buildTimeline(func) {
         timeline.push({ tool, color });
     });
 
-    if (timeline[0]) play($timeline, timeline);
+    if (timeline[0]) setTimeout(() => {
+        play($timeline, timeline);
+    }, 1000);
 }
 
 function funcToHtml(func) {
@@ -189,8 +201,8 @@ function play($timeline, timeline) {
             cell = board.find(c => c.x === hero.x && c.y === hero.y);
             if (!cell.color) lost();
             if (cell.star) {
-                cell.star = false;
-                const stars = board.filter(c => c.star)
+                cell.starClear = true;
+                const stars = board.filter(c => c.star && !c.starClear)
                 if (stars.length === 0) won();
             }
         } else if (step.tool === 'right') {
@@ -223,6 +235,13 @@ function lost() {
     playing = false;
 }
 
+function stop() {
+    hero.reset();
+    for (const cell of board.filter(c => c.starClear)) {
+        cell.starClear = false;
+    }
+}
+
 $(document).on('click', '.functions .step', e => {
     const $el = $(e.target);
     $('.step.selected').removeClass('selected');
@@ -253,5 +272,8 @@ $(document).on('click', '.action', e => {
     const $el = $(e.target);
     const action = $el.attr('data-action');
 
-    if (action === 'play') loadFuncs();
+    if (action === 'play') {
+        stop();
+        loadFuncs();
+    }
 });
