@@ -14,7 +14,7 @@ body {
     font-family: sans-serif;
     background-color: #f0f7fa;
     color: #335566;
-    transition: all .2s ease;
+    transition: background-color .2s ease;
     user-select: none;
 
     &.dark {
@@ -47,7 +47,7 @@ body {
                 .step {
                     background-color: rgba(255,255,255,.05);
                     border-color: #474f54;
-                    
+
                     &[data-color="0"] {
                         color: white;
                     }
