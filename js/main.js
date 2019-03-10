@@ -2,9 +2,11 @@ const gridSize = 40;
 let rows;
 let cols;
 
+const speed = 300;
+
 const debug = false;
 
-const colors = ['#dddddd', '#4caf50', '#2196f3', '#ffc107'];
+const colors = ['#edeeef', '#50ce55', '#47adff', '#ffc107'];
 
 const board = [];
 let funcs;
@@ -13,15 +15,16 @@ let hoveredCell = {};
 let clickedCell = {};
 let selectedCell = {};
 
-let map;
+let level;
 let hero;
 
 let playing = false;
+let dark = false;
 
 function preload() {
-    // Load map
-    const data = loadJSON('data/map2.json', () => {
-        map = data.map;
+    // Load level
+    const data = loadJSON('data/level2.json', () => {
+        level = data.map;
 
         // Create and position hero
         hero = new Hero(data.hero.pos.x, data.hero.pos.y, data.hero.dir);
@@ -54,15 +57,16 @@ function preload() {
 
 function setup() {
     const canvas = createCanvas(window.innerWidth / 2, window.innerHeight);
+    dark = $('body').hasClass('dark');
     canvas.parent('canvas-wrapper');
 
-    rows = map.length;
-    cols = map[0].length;
+    rows = level.length;
+    cols = level[0].length;
 
     for (let y = 0; y < rows; y += 1) {
         board[y] = [];
         for (let x = 0; x < cols; x += 1) {
-            board[y].push(new Cell(x, y, map[y] ? map[y][x] : false));
+            board[y].push(new Cell(x, y, level[y] ? level[y][x] : false));
         }
     }
 }
@@ -70,7 +74,9 @@ function setup() {
 function draw() {
     hoveredCell = {};
 
-    background(255);
+    clear();
+    if (dark) background('#1c334050');
+    else background(255, 50);
     noFill();
 
     const oX = Math.floor(width / 2 - cols * gridSize / 2);
@@ -81,16 +87,17 @@ function draw() {
     for (let j = -20; j < 20; j += 1) {
         for (let i = -20; i < 20; i += 1) {
             if (board[i] && board[i][j]) {
-                stroke(0, 50, 200, 2);
+                if (dark) stroke(30, 150, 255, 1);
+                else stroke(50, 100, 200, 1);
                 for (let y = -2; y <= 2; y += 1) {
                     for (let x = -2; x <= 2; x += 1) {
-                        rect((j + y) * gridSize, (i + x) * gridSize, gridSize, gridSize);
+                        rect((j + y) * gridSize, (i + x) * gridSize + 3, gridSize, gridSize);
                     }
                 }
             }
         }
     }
-    stroke(0, 0, 0, 150);
+    stroke(150);
 
     for (const row of board) {
         for (const cell of row) cell.display();
@@ -157,15 +164,23 @@ class Cell {
         translate(x, y);
 
         if (this.color !== undefined) {
+            noStroke();
+            fill(220);
+            rect(0, gridSize, gridSize, 4);
             fill(colors[this.color]);
-            stroke(0, 30);
+            stroke(0, 50);
             rect(0, 0, gridSize, gridSize);
         }
 
         if (this.star && !this.starClear) {
+            push();
+            translate(gridSize / 2, gridSize / 2);
+            rotate(frameCount / 100);
+            scale(map(sin(frameCount / 20), 0, 1, .8, 1));
             fill('#faf030');
             stroke(0, 200);
-            star(gridSize / 2, gridSize / 2, 5, 12, 5);
+            star(0, 0, 5, 12, 5);
+            pop();
         }
 
         if (debug) {
@@ -243,7 +258,7 @@ function buildTimeline(func) {
     if (timeline[0]) setTimeout(() => {
         playing = true;
         play($timeline, timeline);
-    }, 1000);
+    }, speed);
 }
 
 /**
@@ -285,7 +300,6 @@ function play($timeline, timeline) {
 
                 // Check if all stars have been collected if so, game is won
                 const stars = board.map(row => row.find(c => c.star && !c.starClear)).filter(Boolean);
-                console.log(stars);
                 if (stars.length === 0) won();
             }
         } else if (step.tool === 'right') {
@@ -314,7 +328,7 @@ function play($timeline, timeline) {
             if (timeline.length) play($timeline, timeline);
             else lost();
         }
-    }, 1000);
+    }, speed);
 }
 
 function won() {
@@ -339,8 +353,12 @@ function stop() {
 $(document).on('click', '.functions .step', e => {
     // Select a step by clicking on it
     const $el = $(e.target);
-    $('.step.selected').removeClass('selected');
-    $el.addClass('selected');
+    if ($el.hasClass('selected')) {
+        $('.step.selected').removeClass('selected');
+    } else {
+        $('.step.selected').removeClass('selected');
+        $el.addClass('selected');
+    }
 });
 
 $(document).on('click', '.color', e => {
@@ -375,3 +393,34 @@ $(document).on('click', '.action', e => {
         loadFuncs();
     }
 });
+
+$(document).on('click', '.toggle-dark', () => {
+    $('body').toggleClass('dark');
+    dark = !dark;
+});
+
+function keyPressed() {
+    if (key === 'ArrowRight') {
+        if (!$('.step.selected').length) {
+            $('.function:first-child .step:first-of-type').addClass('selected');
+        } else {
+            const $selected = $('.selected');
+            $selected.removeClass('selected');
+            if ($selected.next('.step').length) $selected.next('.step').addClass('selected');
+            else if ($selected.parent().next('.function').length) {
+                $selected.parent().next('.function').find('.step:first-of-type').addClass('selected');
+            }
+        }
+    } else if (key === 'ArrowLeft') {
+        if (!$('.step.selected').length) {
+            $('.function:last-child .step:last-of-type').addClass('selected');
+        } else {
+            const $selected = $('.selected');
+            $selected.removeClass('selected');
+            if ($selected.prev('.step').length) $selected.prev('.step').addClass('selected');
+            else if ($selected.parent().prev('.function').length) {
+                $selected.parent().prev('.function').find('.step:last-of-type').addClass('selected');
+            }
+        }
+    }
+}

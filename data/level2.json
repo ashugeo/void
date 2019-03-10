@@ -12,7 +12,7 @@
         },
         "dir": 1
     },
-    "funcs": [3, 4],
-    "tools": ["forward", "right", "left", "f1", "f2"],
+    "funcs": [4],
+    "tools": ["forward", "right", "left", "f1"],
     "colors": [1, 2, 3]
 }
