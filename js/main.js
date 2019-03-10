@@ -234,9 +234,11 @@ function play($timeline, timeline) {
             hero.right();
         } else if (step.tool === 'left') {
             hero.left();
-        } else if (step.tool === 'f1') {
-            timeline.splice(1, 0, ...funcs[0]);
-            $('.timeline .step:first-child').after(funcToHtml(funcs[0]));
+        } else if (step.tool[0] === 'f') {
+            // Add function to timeline
+            const func = parseInt(step.tool.replace('f', '')) - 1;
+            timeline.splice(1, 0, ...funcs[func]);
+            $('.timeline .step:first-child').after(funcToHtml(funcs[func]));
         }
     }
 
