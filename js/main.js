@@ -19,10 +19,14 @@ let hero;
 let playing = false;
 
 function preload() {
-    const data = loadJSON('data/map1.json', () => {
+    // Load map
+    const data = loadJSON('data/map2.json', () => {
         map = data.map;
+
+        // Create and position hero
         hero = new Hero(data.hero.pos.x, data.hero.pos.y, data.hero.dir);
 
+        // Display functions slots in UI
         const $functions = $('.functions');
         for (const func of data.funcs) {
             $functions.append(`<div class="function">${'<div class="step"></div>'.repeat(func)}<div>`);
@@ -30,6 +34,7 @@ function preload() {
 
         const $tools = $('.tools');
 
+        // Display tools in UI
         let tools = '<div class="row">';
         for (const tool of data.tools) {
             tools += `<div class="tool" data-tool="${tool}"></div>`;
@@ -37,6 +42,7 @@ function preload() {
         tools += '</div>';
         $tools.append(tools);
 
+        // Display colors in UI
         let colors = '<div class="row">';
         for (const color of data.colors) {
             colors += `<div class="color" data-color="${color}"></div>`;
@@ -166,48 +172,64 @@ function star(x, y, radius1, radius2, npoints) {
     endShape(CLOSE);
 }
 
+/**
+* Load functions created by the player
+*/
 function loadFuncs() {
     const $functions = $('.functions');
+
+    // Array of functions (f1, f2…)
     funcs = [];
 
     $functions.find('.function').each((id, el) => {
         const $function = $(el);
+
+        // Array of steps in a function
         const func = [];
 
         $function.find('.step').each((id, el) => {
             const $step = $(el);
-
             const tool = $step.attr('data-tool');
             const color = parseInt($step.attr('data-color')) | 0;
-
             func.push({ tool, color });
         });
-        funcs.push(func)
+        funcs.push(func);
     });
 
-    playing = true;
+    // Load f1 to timeline and play it
     buildTimeline(funcs[0]);
 }
 
 function buildTimeline(func) {
     const $timeline = $('.timeline');
+
+    // Reset UI timeline by emptying it
     $timeline.empty();
+
+    // Fill UI timeline with a function's steps
     $timeline.html(funcToHtml(func));
 
+    // Create timeline (array of steps)
     const timeline = [];
     $timeline.find('.step').each((id, el) => {
         const $step = $(el);
-
         const tool = $step.attr('data-tool');
         const color = parseInt($step.attr('data-color')) | 0;
         timeline.push({ tool, color });
     });
 
+    // Timeline is not empty, play it
     if (timeline[0]) setTimeout(() => {
+        playing = true;
         play($timeline, timeline);
     }, 1000);
 }
 
+/**
+* Turn a function (array of steps) to HTML for the UI
+* @param  {Array} func  function (array of steps)
+* @return {String}      HTML to inject to the DOM
+*/
 function funcToHtml(func) {
     html = '';
     for (const step of func) {
@@ -217,22 +239,38 @@ function funcToHtml(func) {
 }
 
 function play($timeline, timeline) {
+    // Action to play
     const step = timeline[0];
 
+    // Find cell the hero is on
     let cell = board.find(c => c.x === hero.x && c.y === hero.y);
+
+    // Any color, or matching color
     if (step.color === 0 || step.color === cell.color) {
         if (step.tool === 'forward') {
+            // Move forward
             hero.forward();
+
+            // Find new cell the hero is on
             cell = board.find(c => c.x === hero.x && c.y === hero.y);
+
+            // Moved out of board
             if (!cell.color) lost();
+
+            // Stepped on a star
             if (cell.star) {
+                // Mark star as collected
                 cell.starClear = true;
+
+                // Check if all stars have been collected if so, game is won
                 const stars = board.filter(c => c.star && !c.starClear)
                 if (stars.length === 0) won();
             }
         } else if (step.tool === 'right') {
+            // Turn right (clockwise)
             hero.right();
         } else if (step.tool === 'left') {
+            // Turn left (counterclockwise)
             hero.left();
         } else if (step.tool[0] === 'f') {
             // Add function to timeline
@@ -242,10 +280,15 @@ function play($timeline, timeline) {
         }
     }
 
+    // Remove action that has just been played from timeline
     timeline.shift();
+
     setTimeout(() => {
         if (playing) {
+            // Remove action from UI
             $('.timeline .step:first-child').remove();
+
+            // Play next action if there's any, otherwise game is lost
             if (timeline.length) play($timeline, timeline);
             else lost();
         }
@@ -264,18 +307,22 @@ function lost() {
 
 function stop() {
     hero.reset();
+
+    // Reset board
     for (const cell of board.filter(c => c.starClear)) {
         cell.starClear = false;
     }
 }
 
 $(document).on('click', '.functions .step', e => {
+    // Select a step by clicking on it
     const $el = $(e.target);
     $('.step.selected').removeClass('selected');
     $el.addClass('selected');
 });
 
 $(document).on('click', '.color', e => {
+    // Add or remove color to selected step
     const $el = $(e.target);
     const color = $el.attr('data-color')
     if ($('.step.selected').attr('data-color') === color) {
@@ -286,6 +333,7 @@ $(document).on('click', '.color', e => {
 });
 
 $(document).on('click', '.tool', e => {
+    // Add or remove action to selected step
     const $el = $(e.target);
     const tool = $el.attr('data-tool');
     if ($('.step.selected').attr('data-tool') === tool) {
@@ -296,6 +344,7 @@ $(document).on('click', '.tool', e => {
 });
 
 $(document).on('click', '.action', e => {
+    // Manage player actions
     const $el = $(e.target);
     const action = $el.attr('data-action');
 
