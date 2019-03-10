@@ -60,8 +60,9 @@ function setup() {
     cols = map[0].length;
 
     for (let y = 0; y < rows; y += 1) {
+        board[y] = [];
         for (let x = 0; x < cols; x += 1) {
-            board.push(new Cell(x, y, map[y] ? map[y][x] : false));
+            board[y].push(new Cell(x, y, map[y] ? map[y][x] : false));
         }
     }
 }
@@ -79,13 +80,21 @@ function draw() {
 
     for (let j = -20; j < 20; j += 1) {
         for (let i = -20; i < 20; i += 1) {
-            stroke(0, 50, 200, 10);
-            rect(i * gridSize, j * gridSize, gridSize, gridSize);
+            if (board[i] && board[i][j]) {
+                stroke(0, 50, 200, 2);
+                for (let y = -2; y <= 2; y += 1) {
+                    for (let x = -2; x <= 2; x += 1) {
+                        rect((j + y) * gridSize, (i + x) * gridSize, gridSize, gridSize);
+                    }
+                }
+            }
         }
     }
     stroke(0, 0, 0, 150);
 
-    for (const cell of board) cell.display();
+    for (const row of board) {
+        for (const cell of row) cell.display();
+    }
     hero.display();
 }
 
@@ -104,6 +113,7 @@ class Hero {
         translate((1 / 2 + this.x) * gridSize, (1 / 2 + this.y) * gridSize);
         rotate(radians(this.dir * 90));
         fill(255);
+        stroke(0, 200);
         triangle(0, -10, -10, 10, 10, 10);
         pop();
     }
@@ -148,11 +158,13 @@ class Cell {
 
         if (this.color !== undefined) {
             fill(colors[this.color]);
+            stroke(0, 30);
             rect(0, 0, gridSize, gridSize);
         }
 
         if (this.star && !this.starClear) {
             fill('#faf030');
+            stroke(0, 200);
             star(gridSize / 2, gridSize / 2, 5, 12, 5);
         }
 
@@ -252,7 +264,7 @@ function play($timeline, timeline) {
     const step = timeline[0];
 
     // Find cell the hero is on
-    let cell = board.find(c => c.x === hero.x && c.y === hero.y);
+    let cell = board[hero.y][hero.x];
 
     // Any color, or matching color
     if (step.color === 0 || step.color === cell.color) {
@@ -261,10 +273,10 @@ function play($timeline, timeline) {
             hero.forward();
 
             // Find new cell the hero is on
-            cell = board.find(c => c.x === hero.x && c.y === hero.y);
+            cell = board[hero.y][hero.x];
 
             // Moved out of board
-            if (!cell.color) lost();
+            if (!cell || cell.color === undefined) lost();
 
             // Stepped on a star
             if (cell.star) {
@@ -272,7 +284,8 @@ function play($timeline, timeline) {
                 cell.starClear = true;
 
                 // Check if all stars have been collected if so, game is won
-                const stars = board.filter(c => c.star && !c.starClear)
+                const stars = board.map(row => row.find(c => c.star && !c.starClear)).filter(Boolean);
+                console.log(stars);
                 if (stars.length === 0) won();
             }
         } else if (step.tool === 'right') {
