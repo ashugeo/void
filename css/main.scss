@@ -32,7 +32,7 @@ main {
     padding: 16px;
     width: 50%;
 
-    .functions {
+    .functions-wrap {
         padding: 8px;
         display: flex;
         flex-flow: column wrap;
@@ -41,6 +41,7 @@ main {
 
         .function {
             display: flex;
+            align-items: center;
 
             &:not(:last-child) {
                 margin-bottom: 8px;
@@ -53,6 +54,10 @@ main {
                     outline: 3px solid black;
                     z-index: 1;
                 }
+            }
+
+            span {
+                margin-right: 8px;
             }
         }
     }

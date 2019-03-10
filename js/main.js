@@ -29,7 +29,7 @@ function preload() {
         // Display functions slots in UI
         const $functions = $('.functions');
         for (const func of data.funcs) {
-            $functions.append(`<div class="function">${'<div class="step"></div>'.repeat(func)}<div>`);
+            $functions.append(`<div class="function"><span>f${data.funcs.indexOf(func) + 1}</span>${'<div class="step"></div>'.repeat(func)}</div>`);
         }
 
         const $tools = $('.tools');
@@ -76,6 +76,15 @@ function draw() {
     const oY = Math.floor(height / 2 - rows * gridSize / 2);
 
     translate(oX, oY);
+
+    for (let j = -20; j < 20; j += 1) {
+        for (let i = -20; i < 20; i += 1) {
+            stroke(0, 50, 200, 10);
+            rect(i * gridSize, j * gridSize, gridSize, gridSize);
+        }
+    }
+    stroke(0, 0, 0, 150);
+
     for (const cell of board) cell.display();
     hero.display();
 }
