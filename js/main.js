@@ -34,9 +34,10 @@ function preload() {
 
     // str = '111s30001s021301s00w4h4x0y0d1f4arlc12';
 
-    const str = location.search.replace('?', '');
+    const str = location.search.replace('?', '') || '1w1h1x0y0d1';
 
     if (str) loadLevel(str);
+    else return;
 
     // Create and position hero
     hero = new Hero(level.hero.x, level.hero.y, level.hero.dir);
@@ -76,6 +77,8 @@ function setup() {
     const canvas = createCanvas(window.innerWidth / 2, window.innerHeight);
     dark = $('body').hasClass('dark');
     canvas.parent('canvas-wrapper');
+
+    if (!level.map.length) return;
 
     rows = level.map.length;
     cols = level.map[0].length;
@@ -119,7 +122,7 @@ function draw() {
     for (const row of board) {
         for (const cell of row) cell.display();
     }
-    hero.display();
+    if (hero) hero.display();
 }
 
 class Hero {
@@ -254,8 +257,8 @@ function loadLevel(str) {
     level.hero.dir = parseInt(str.split('d')[1].split('f')[0]);
 
     // Find level functions and colors
-    level.funcs = str.match(/f\d+/g).map(d => parseInt(d.replace('f', '')));
-    level.colors = str.match(/c[\d]+/g)[0].replace('c', '').split('').map(d => parseInt(d));
+    level.funcs = str.match(/f\d+/g) ? str.match(/f\d+/g).map(d => parseInt(d.replace('f', ''))) : [];
+    level.colors = str.match(/c[\d]+/g) ? str.match(/c[\d]+/g)[0].replace('c', '').split('').map(d => parseInt(d)) : [];
 
     // Find level tools
     if (str.includes('a')) level.tools.push('forward');
@@ -315,6 +318,7 @@ function buildTimeline(func) {
 * @return {String}      HTML to inject to the DOM
 */
 function funcToHTML(func) {
+    if (!func) return;
     html = '';
     for (const step of func) {
         if (step.tool) html += `<div class="step" data-tool="${step.tool}" data-color="${step.color}"></div>`;
@@ -325,6 +329,8 @@ function funcToHTML(func) {
 function playStep() {
     // Action to play
     const step = timeline[0];
+
+    if (!step) return;
 
     // Find cell the hero is on
     let cell = board[hero.y][hero.x];
