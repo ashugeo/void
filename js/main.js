@@ -2,7 +2,7 @@ const gridSize = 40;
 let rows;
 let cols;
 
-const speed = 300;
+const speed = 1000;
 
 const debug = false;
 
@@ -18,12 +18,17 @@ let selectedCell = {};
 let level;
 let hero;
 
-let playing = false;
+let state = 'stopped';
 let dark = false;
 
+let $timeline;
+let timeline;
+
 function preload() {
+    $timeline = $('.timeline');
+
     // Load level
-    const data = loadJSON('data/level2.json', () => {
+    const data = loadJSON('data/level3.json', () => {
         level = data.map;
 
         // Create and position hero
@@ -31,19 +36,11 @@ function preload() {
 
         // Display functions slots in UI
         const $functions = $('.functions');
-        for (const func of data.funcs) {
-            $functions.append(`<div class="function"><span>f${data.funcs.indexOf(func) + 1}</span>${'<div class="step"></div>'.repeat(func)}</div>`);
-        }
+        data.funcs.forEach((func, f) => {
+            $functions.append(`<div class="function"><span>f${f + 1}</span>${'<div class="step"></div>'.repeat(func)}</div>`);
+        });
 
         const $tools = $('.tools');
-
-        // Display tools in UI
-        let tools = '<div class="row">';
-        for (const tool of data.tools) {
-            tools += `<div class="tool" data-tool="${tool}"></div>`;
-        }
-        tools += '</div>';
-        $tools.append(tools);
 
         // Display colors in UI
         let colors = '<div class="row">';
@@ -51,7 +48,21 @@ function preload() {
             colors += `<div class="color" data-color="${color}"></div>`;
         }
         colors += '</div>';
-        $tools.append(colors);
+        $tools.prepend(colors);
+
+        // Display tools in UI
+        let tools = '<div class="row">';
+        for (const tool of data.tools) {
+            tools += `<div class="tool" data-tool="${tool}"></div>`;
+        }
+
+        for (let f of Object.keys(data.funcs)) {
+            f = parseInt(f);
+            tools += `<div class="tool" data-tool="f${f + 1}"></div>`;
+        }
+
+        tools += '</div>';
+        $tools.prepend(tools);
     });
 }
 
@@ -226,7 +237,8 @@ function loadFuncs() {
         $function.find('.step').each((id, el) => {
             const $step = $(el);
             const tool = $step.attr('data-tool');
-            const color = parseInt($step.attr('data-color')) | 0;
+            if (!tool) return;
+            const color = parseInt($step.attr('data-color')) || 0;
             func.push({ tool, color });
         });
         funcs.push(func);
@@ -237,28 +249,20 @@ function loadFuncs() {
 }
 
 function buildTimeline(func) {
-    const $timeline = $('.timeline');
-
     // Reset UI timeline by emptying it
     $timeline.empty();
 
     // Fill UI timeline with a function's steps
-    $timeline.html(funcToHtml(func));
+    $timeline.html(funcToHTML(func));
 
     // Create timeline (array of steps)
-    const timeline = [];
+    timeline = [];
     $timeline.find('.step').each((id, el) => {
         const $step = $(el);
         const tool = $step.attr('data-tool');
-        const color = parseInt($step.attr('data-color')) | 0;
+        const color = parseInt($step.attr('data-color')) || 0;
         timeline.push({ tool, color });
     });
-
-    // Timeline is not empty, play it
-    if (timeline[0]) setTimeout(() => {
-        playing = true;
-        play($timeline, timeline);
-    }, speed);
 }
 
 /**
@@ -266,7 +270,7 @@ function buildTimeline(func) {
 * @param  {Array} func  function (array of steps)
 * @return {String}      HTML to inject to the DOM
 */
-function funcToHtml(func) {
+function funcToHTML(func) {
     html = '';
     for (const step of func) {
         if (step.tool) html += `<div class="step" data-tool="${step.tool}" data-color="${step.color}"></div>`;
@@ -274,7 +278,7 @@ function funcToHtml(func) {
     return html;
 }
 
-function play($timeline, timeline) {
+function playStep() {
     // Action to play
     const step = timeline[0];
 
@@ -291,7 +295,7 @@ function play($timeline, timeline) {
             cell = board[hero.y][hero.x];
 
             // Moved out of board
-            if (!cell || cell.color === undefined) lost();
+            if (!cell || cell.color === undefined) return lost();
 
             // Stepped on a star
             if (cell.star) {
@@ -312,7 +316,7 @@ function play($timeline, timeline) {
             // Add function to timeline
             const func = parseInt(step.tool.replace('f', '')) - 1;
             timeline.splice(1, 0, ...funcs[func]);
-            $('.timeline .step:first-child').after(funcToHtml(funcs[func]));
+            $('.timeline .step:first-child').after(funcToHTML(funcs[func]));
         }
     }
 
@@ -320,12 +324,12 @@ function play($timeline, timeline) {
     timeline.shift();
 
     setTimeout(() => {
-        if (playing) {
+        if (state === 'playing') {
             // Remove action from UI
             $('.timeline .step:first-child').remove();
 
             // Play next action if there's any, otherwise game is lost
-            if (timeline.length) play($timeline, timeline);
+            if (timeline.length) playStep();
             else lost();
         }
     }, speed);
@@ -333,21 +337,12 @@ function play($timeline, timeline) {
 
 function won() {
     console.log('won');
-    playing = false;
+    state = 'stopped';
 }
 
 function lost() {
     console.log('lost');
-    playing = false;
-}
-
-function stop() {
-    hero.reset();
-
-    // Reset board
-    for (const cell of board.filter(c => c.starClear)) {
-        cell.starClear = false;
-    }
+    state = 'stopped';
 }
 
 $(document).on('click', '.functions .step', e => {
@@ -388,15 +383,69 @@ $(document).on('click', '.action', e => {
     const $el = $(e.target);
     const action = $el.attr('data-action');
 
-    if (action === 'play') {
-        stop();
-        loadFuncs();
-    }
+    if (action === 'play') play($el);
+    else if (action === 'pause') pause($el);
+    else if (action === 'next') next();
+    else if (action === 'stop') stop();
 });
 
+function play($el) {
+    if (state === 'stopped') {
+        loadFuncs();
+        
+        // Timeline is not empty, play it
+        if (timeline[0]) setTimeout(() => playStep(), speed);
+    }
+    else if (state === 'paused') playStep();
+    state = 'playing';
+    $el.attr('data-action', 'pause').html('❙ ❙');
+}
+
+function pause($el) {
+    state = 'paused';
+    $el.attr('data-action', 'play').html('►');
+
+    // Remove action from UI
+    $('.timeline .step:first-child').remove();
+}
+
+function next() {
+    if (state === 'stopped') loadFuncs();
+    state = 'paused';
+    $('[data-action="pause"]').attr('data-action', 'play').html('►');
+    
+    playStep();
+    
+    // Remove action from UI
+    $('.timeline .step:first-child').remove();
+}
+
+function stop() {
+    $('[data-action="pause"]').attr('data-action', 'play').html('►');
+    state = 'stopped';
+
+    hero.reset();
+
+    // Reset board
+    for (const cell of board.filter(c => c.starClear)) {
+        cell.starClear = false;
+    }
+
+    // Reset UI timeline by emptying it
+    $timeline.empty();
+}
+
 $(document).on('click', '.toggle-dark', () => {
+    $('.timeline').addClass('hidden');
     $('body').toggleClass('dark');
     dark = !dark;
+
+    localStorage.setItem('darkmode', dark);
+
+    // Hack to hide linear-gradient un-transition
+    setTimeout(() => {
+        $timeline.removeClass('hidden');
+    }, 300);
 });
 
 function keyPressed() {
