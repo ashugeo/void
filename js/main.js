@@ -417,7 +417,7 @@ function playStep() {
     if (!step) return;
 
     // Find cell the hero is on
-    let cell = board[hero.y][hero.x];
+    let cell = board.find(c => c.x === hero.x && c.y === hero.y);
 
     // Any color, or matching color
     if (step.color === 0 || step.color === cell.color) {
@@ -426,7 +426,7 @@ function playStep() {
             hero.forward();
 
             // Find new cell the hero is on
-            cell = board[hero.y][hero.x];
+            cell = board.find(c => c.x === hero.x && c.y === hero.y);
 
             // Moved out of board
             if (!cell || cell.color === undefined) return lost();
@@ -437,7 +437,7 @@ function playStep() {
                 cell.starClear = true;
 
                 // Check if all stars have been collected if so, game is won
-                const stars = board.map(row => row.find(c => c.star && !c.starClear)).filter(Boolean);
+                const stars = board.map(c => c.star && !c.starClear).filter(Boolean);
                 if (stars.length === 0) won();
             }
         } else if (step.tool === 'right') {
