@@ -6,7 +6,7 @@ const speed = 1000;
 
 const debug = false;
 
-const colors = [null, '#edeeef', '#50ce55', '#47adff', '#ffc107'];
+const colors = [null, '#edeeef', '#50ce55', '#47adff', '#ffc107', '#c44dff'];
 
 const board = [];
 let funcs;
@@ -35,8 +35,6 @@ let tool = '1';
 function preload() {
     $timeline = $('.timeline');
 
-    // str = '111s30001s021301s00w4h4x0y0d1f4arlc12';
-
     loadLevel();
 
     // Create and position hero
@@ -55,13 +53,7 @@ function preload() {
     // Display colors in UI
     let colors = '<div class="row" id="colors">';
     for (const color of level.colors) {
-        colors += `<div class="color" data-color="${color + 1}"></div>`;
-    }
-
-    if (editor) {
-        for (let c = 2; c <= 4; c += 1) {
-            colors += `<div class="color" data-color="${c}"></div>`;
-        }
+        colors += `<div class="color" data-color="${color}"></div>`;
     }
 
     colors += '</div>';
@@ -71,12 +63,6 @@ function preload() {
     let tools = '<div class="row" id="tools">';
     for (const tool of level.tools) {
         tools += `<div class="tool" data-tool="${tool}"></div>`;
-    }
-
-    if (editor) {
-        for (const tool of ['forward', 'right', 'left']) {
-            tools += `<div class="tool" data-tool="${tool}"></div>`;
-        }
     }
 
     for (let f of Object.keys(level.funcs)) {
@@ -154,6 +140,11 @@ $(document).on('click', 'canvas', e => {
         if (!cell) board.push(new Cell(x, y, tool));
         else if (cell.color !== parseInt(tool)) cell.color = parseInt(tool);
         else board.splice(board.indexOf(cell), 1);
+
+        const colors = [...new Set(board.map(cell => cell.color).filter(d => d > 1))];
+        if (colors.length !== $('#colors .color').length) {
+            $('#colors').html(colors.map(c => `<div class="color" data-color="${c}"></div>`));
+        }
     } else if (cell) {
         if (tool === 'star') {
             cell.star = !cell.star;
@@ -166,13 +157,10 @@ $(document).on('click', 'canvas', e => {
         }
     }
 
+    // Sort cells vertically for drawing z-index consistency
     board.sort((a, b) => a.y > b.y ? 1 : -1);
 
-    console.log(board);
-
-    const str = '';
-
-    history.replaceState(null, null, `${location.origin}${location.pathname}?${str}`);
+    updateURL();
 });
 
 class Hero {
@@ -309,12 +297,57 @@ function loadLevel() {
 
     // Find level functions and colors
     level.funcs = str.match(/f\d+/g) ? str.match(/f\d+/g).map(d => parseInt(d.replace('f', ''))) : [];
-    level.colors = str.match(/c[\d]+/g) ? str.match(/c[\d]+/g)[0].replace('c', '').split('').map(d => parseInt(d)) : [];
+    level.colors = [...new Set(cells.map(d => parseInt(d.replace('s', ''))).filter(d => d > 1))];
 
     // Find level tools
     if (str.includes('a')) level.tools.push('forward');
     if (str.includes('r')) level.tools.push('right');
     if (str.includes('l')) level.tools.push('left');
+}
+
+function boardToString() {
+    let str = '';
+
+    const top = board.sort((a, b) => a.y > b.y ? 1 : -1)[0].y;
+    const right = board.sort((a, b) => a.x < b.x ? 1 : -1)[0].x;
+    const bottom = board.sort((a, b) => a.y < b.y ? 1 : -1)[0].y;
+    const left = board.sort((a, b) => a.x > b.x ? 1 : -1)[0].x;
+
+    for (let y = top; y <= bottom; y += 1) {
+        for (let x = left; x <= right; x += 1) {
+            const cell = board.find(c => c.x === x && c.y === y);
+            if (cell) {
+                str += cell.color;
+                if (cell.star) str += 's';
+            } else {
+                str += '0';
+            }
+        }
+    }
+
+    // Board dimensions
+    str += `w${right - left + 1}`;
+    str += `h${bottom - top + 1}`;
+
+    // Hero coordinates and orientation
+    str += `x${hero.x - left}`;
+    str += `y${hero.y - top}`;
+    str += `d${hero.dir}`;
+
+    // Functions and steps
+    $('.function:not(:last-child)').each((id, el) => {
+        const $function = $(el);
+        str += `f${$function.find('.step').length}`;
+    });
+
+    str += `arl`;
+
+    return str;
+}
+
+function updateURL() {
+    const str = boardToString();
+    history.replaceState(null, null, `${location.origin}${location.pathname}?${str}`);
 }
 
 /**
@@ -607,6 +640,8 @@ $(document).on('click', '.step-add', e => {
         // Add next possible function
         $function.after(`<div class="function"><span></span><div class="step-add"></div><div class="delete"></div></div>`);
     }
+
+    updateURL();
 });
 
 $(document).on('click', '.delete', e => {
@@ -632,4 +667,6 @@ $(document).on('click', '.delete', e => {
             $(el).find('span').html(`f${id + 1}`);
         });
     }
+
+    updateURL();
 });
