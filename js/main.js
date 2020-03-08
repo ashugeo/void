@@ -29,7 +29,7 @@ const level = {
     tools: []
 };
 
-const editor = location.pathname === '/editor/';
+const editor = location.pathname.includes('/editor/');
 let tool = '1';
 
 function preload() {
