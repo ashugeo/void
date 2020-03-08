@@ -104,13 +104,14 @@ function draw() {
 
     for (let j = -20; j < 20; j += 1) {
         for (let i = -20; i < 20; i += 1) {
-            if (board[i] && board[i][j]) {
-                if (dark) stroke(30, 150, 255, 1);
-                else stroke(50, 100, 200, 1);
-                for (let y = -2; y <= 2; y += 1) {
-                    for (let x = -2; x <= 2; x += 1) {
-                        rect((j + y) * gridSize, (i + x) * gridSize + 3, gridSize, gridSize);
-                    }
+            const cell = board.find(c => c.x === j && c.y === i)
+            if (!cell) continue;
+            
+            if (dark) stroke(30, 150, 255, 1);
+            else stroke(50, 100, 200, 1);
+            for (let y = -2; y <= 2; y += 1) {
+                for (let x = -2; x <= 2; x += 1) {
+                    rect((j + y) * gridSize, (i + x) * gridSize + 3, gridSize, gridSize);
                 }
             }
         }
