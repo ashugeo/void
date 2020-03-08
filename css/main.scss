@@ -56,6 +56,10 @@ body {
                         outline-color: #73add2;
                     }
                 }
+
+                &::after {
+                    background: linear-gradient(to right, transparent, #1a2a33);
+                }
             }
 
             .tools {
@@ -99,8 +103,11 @@ main {
 }
 
 #ui-wrapper {
-    padding: 16px;
+    padding: 64px;
     width: 50%;
+    display: flex;
+    flex-flow: column;
+    justify-content: center;
 
     .functions-wrap {
         padding: 8px;
@@ -120,6 +127,7 @@ main {
             .step {
                 cursor: pointer;
                 background-color: #f2f3f4;
+                transition: all .2s ease;
 
                 &.selected {
                     outline: 3px solid black;
@@ -139,15 +147,31 @@ main {
                 font-size: 12px;
                 font-weight: bold;
                 opacity: .5;
+                transition: color .2s ease;
             }
         }
     }
 
     .timeline {
+        position: relative;
         height: 56px;
         display: flex;
         padding: 8px;
         overflow: hidden;
+
+        &.hidden {
+            opacity: 0;
+        }
+
+        &::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 64px;
+            height: 100%;
+            background: linear-gradient(to right, transparent, #f0f7fa);
+        }
 
         .step {
             flex: 0 0 40px;
