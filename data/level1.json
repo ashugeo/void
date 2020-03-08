@@ -11,6 +11,6 @@
         "dir": 1
     },
     "funcs": [3],
-    "tools": ["forward", "right", "f1"],
+    "tools": ["forward", "right"],
     "colors": [1, 2, 3]
 }
