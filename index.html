@@ -9,6 +9,9 @@
         <link rel="stylesheet" href="css/main.min.css">
     </head>
     <body>
+        <script>
+            if (localStorage.getItem('darkmode') === 'true') $('body').addClass('dark');
+        </script>
         <main>
             <div id="ui-wrapper">
                 <div class="functions-wrap">
@@ -17,6 +20,7 @@
                 <div class="tools">
                     <div class="row">
                         <div class="action" data-action="play">►</div>
+                        <div class="action" data-action="next">❙▸</div>
                         <div class="action" data-action="stop">◼</div>
                     </div>
                 </div>
