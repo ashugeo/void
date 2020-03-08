@@ -29,6 +29,9 @@ const level = {
     tools: []
 };
 
+const editor = location.pathname === '/editor/';
+let tool = '1';
+
 function preload() {
     $timeline = $('.timeline');
 
@@ -84,16 +87,13 @@ function setup() {
     cols = level.map[0].length;
 
     for (let y = 0; y < rows; y += 1) {
-        board[y] = [];
         for (let x = 0; x < cols; x += 1) {
-            board[y].push(new Cell(x, y, level.map[y] ? level.map[y][x] : false));
+            if (level.map[y][x] !== '0') board.push(new Cell(x, y, level.map[y][x]));
         }
     }
 }
 
 function draw() {
-    hoveredCell = {};
-
     clear();
     if (dark) background('#1c334050');
     else background(255, 50);
@@ -117,13 +117,51 @@ function draw() {
             }
         }
     }
+
     stroke(150);
 
-    for (const row of board) {
-        for (const cell of row) cell.display();
-    }
+    for (const cell of board) cell.display();
     if (hero) hero.display();
+
+    if (editor) {
+        const x = Math.floor((mouseX - oX) / gridSize);
+        const y = Math.floor((mouseY - oY) / gridSize);
+        hoveredCell = { x, y };
+    }
 }
+
+$(document).on('click', 'canvas', e => {
+    if (!editor) return;
+
+    const x = hoveredCell.x;
+    const y = hoveredCell.y;
+
+    const cell = board.find(c => c.x === x && c.y === y);
+
+    if (!isNaN(parseInt(tool))) {
+        if (!cell) board.push(new Cell(x, y, tool));
+        else if (cell.color !== parseInt(tool)) cell.color = parseInt(tool);
+        else board.splice(board.indexOf(cell), 1);
+    } else if (cell) {
+        if (tool === 'star') {
+            cell.star = !cell.star;
+        } else if (tool === 'hero') {
+            if (hero.x === x && hero.y === y) hero.dir = (hero.dir + 1) % 4;
+            else {
+                hero.x = x;
+                hero.y = y;
+            }
+        }
+    }
+
+    board.sort((a, b) => a.y > b.y ? 1 : -1);
+
+    console.log(board);
+
+    const str = '';
+
+    history.replaceState(null, null, `${location.origin}${location.pathname}?${str}`);
+});
 
 class Hero {
     constructor(x, y, dir) {
@@ -523,3 +561,14 @@ function keyPressed() {
         }
     }
 }
+
+$(document).on('click', '#editor-tools', e => {
+    e.stopPropagation();
+
+    const $el = $(e.target);
+    $('#editor-tools .selected').removeClass('selected');
+    $el.addClass('selected');
+    tool = $el.attr('data-tool');
+    
+    console.log(tool);
+});

@@ -100,6 +100,38 @@ main {
     align-items: center;
     flex: 1;
     overflow: hidden;
+
+    #editor-tools {
+        position: absolute;
+        bottom: 0;
+        z-index: 1;
+        padding: 32px;
+
+        .row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid rgba(0,0,0,.3);
+            
+            > div {
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                width: 48px;
+                height: 48px;
+                text-align: center;
+
+                &:not(:last-child) {
+                    border-right: 1px solid rgba(0,0,0,.3);
+                }
+
+                &.selected {
+                    outline: 3px solid black;
+                    z-index: 1;
+                }
+            }
+        }
+    }
 }
 
 #ui-wrapper {
@@ -127,7 +159,7 @@ main {
             .step {
                 cursor: pointer;
                 background-color: #f2f3f4;
-                transition: background-color .2s ease, border-color .2s ease;
+                transition: border-color .2s ease;
 
                 &.selected {
                     outline: 3px solid black;
@@ -270,6 +302,10 @@ main {
     }
 }
 
+[data-color="1"] {
+    background-color: #edeeef !important;
+}
+
 [data-color="2"] {
     background-color: #50ce55 !important;
 }
@@ -280,6 +316,10 @@ main {
 
 [data-color="4"] {
     background-color: #ffc107 !important;
+}
+
+[data-color="5"] {
+    background-color: #c44dff !important;
 }
 
 [data-tool="forward"] {
