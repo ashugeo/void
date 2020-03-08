@@ -6,7 +6,7 @@ const speed = 1000;
 
 const debug = false;
 
-const colors = ['#edeeef', '#50ce55', '#47adff', '#ffc107'];
+const colors = [null, '#edeeef', '#50ce55', '#47adff', '#ffc107'];
 
 const board = [];
 let funcs;
@@ -15,7 +15,6 @@ let hoveredCell = {};
 let clickedCell = {};
 let selectedCell = {};
 
-let level;
 let hero;
 
 let state = 'stopped';
@@ -24,46 +23,53 @@ let dark = false;
 let $timeline;
 let timeline;
 
+const level = {
+    map: [],
+    hero: {},
+    tools: []
+};
+
 function preload() {
     $timeline = $('.timeline');
 
-    // Load level
-    const data = loadJSON('data/level3.json', () => {
-        level = data.map;
+    // str = '111s30001s021301s00w4h4x0y0d1f4arlc12';
 
-        // Create and position hero
-        hero = new Hero(data.hero.pos.x, data.hero.pos.y, data.hero.dir);
+    const str = location.search.replace('?', '');
 
-        // Display functions slots in UI
-        const $functions = $('.functions');
-        data.funcs.forEach((func, f) => {
-            $functions.append(`<div class="function"><span>f${f + 1}</span>${'<div class="step"></div>'.repeat(func)}</div>`);
-        });
+    if (str) loadLevel(str);
 
-        const $tools = $('.tools');
+    // Create and position hero
+    hero = new Hero(level.hero.x, level.hero.y, level.hero.dir);
 
-        // Display colors in UI
-        let colors = '<div class="row">';
-        for (const color of data.colors) {
-            colors += `<div class="color" data-color="${color}"></div>`;
-        }
-        colors += '</div>';
-        $tools.prepend(colors);
-
-        // Display tools in UI
-        let tools = '<div class="row">';
-        for (const tool of data.tools) {
-            tools += `<div class="tool" data-tool="${tool}"></div>`;
-        }
-
-        for (let f of Object.keys(data.funcs)) {
-            f = parseInt(f);
-            tools += `<div class="tool" data-tool="f${f + 1}"></div>`;
-        }
-
-        tools += '</div>';
-        $tools.prepend(tools);
+    // Display functions slots in UI
+    const $functions = $('.functions');
+    level.funcs.forEach((func, f) => {
+        $functions.append(`<div class="function"><span>f${f + 1}</span>${'<div class="step"></div>'.repeat(func)}</div>`);
     });
+
+    const $tools = $('.tools');
+
+    // Display colors in UI
+    let colors = '<div class="row">';
+    for (const color of level.colors) {
+        colors += `<div class="color" data-color="${color + 1}"></div>`;
+    }
+    colors += '</div>';
+    $tools.prepend(colors);
+
+    // Display tools in UI
+    let tools = '<div class="row">';
+    for (const tool of level.tools) {
+        tools += `<div class="tool" data-tool="${tool}"></div>`;
+    }
+
+    for (let f of Object.keys(level.funcs)) {
+        f = parseInt(f);
+        tools += `<div class="tool" data-tool="f${f + 1}"></div>`;
+    }
+
+    tools += '</div>';
+    $tools.prepend(tools);
 }
 
 function setup() {
@@ -71,13 +77,13 @@ function setup() {
     dark = $('body').hasClass('dark');
     canvas.parent('canvas-wrapper');
 
-    rows = level.length;
-    cols = level[0].length;
+    rows = level.map.length;
+    cols = level.map[0].length;
 
     for (let y = 0; y < rows; y += 1) {
         board[y] = [];
         for (let x = 0; x < cols; x += 1) {
-            board[y].push(new Cell(x, y, level[y] ? level[y][x] : false));
+            board[y].push(new Cell(x, y, level.map[y] ? level.map[y][x] : false));
         }
     }
 }
@@ -174,7 +180,7 @@ class Cell {
         push();
         translate(x, y);
 
-        if (this.color !== undefined) {
+        if (this.color) {
             noStroke();
             fill(220);
             rect(0, gridSize, gridSize, 4);
@@ -217,6 +223,44 @@ function star(x, y, radius1, radius2, npoints) {
         vertex(sx, sy);
     }
     endShape(CLOSE);
+}
+
+
+/**
+ * Turn level string into JSON
+ * @param {String} str string representation of level
+ */
+function loadLevel(str) {
+    // Find map substring
+    const map = str.split('w')[0];
+    
+    // Split map into cells
+    const cells = map.match(/\ds*/g);
+
+    // Find map width and height
+    const width = parseInt(str.split('w')[1].split('h')[0]);
+    const height = parseInt(str.split('h')[1].split('x')[0]);
+
+    // Turn 1D array of cells to 2D map array
+    for (let y = 0; y < height; y += 1) {
+        let row = [];
+        for (let x = 0; x < width; x += 1) row.push(cells[y * width + x]);
+        level.map.push(row);
+    }
+
+    // Find hero coordinates and direction
+    level.hero.x = parseInt(str.split('x')[1].split('y')[0]);
+    level.hero.y = parseInt(str.split('y')[1].split('d')[0]);
+    level.hero.dir = parseInt(str.split('d')[1].split('f')[0]);
+
+    // Find level functions and colors
+    level.funcs = str.match(/f\d+/g).map(d => parseInt(d.replace('f', '')));
+    level.colors = str.match(/c[\d]+/g)[0].replace('c', '').split('').map(d => parseInt(d));
+
+    // Find level tools
+    if (str.includes('a')) level.tools.push('forward');
+    if (str.includes('r')) level.tools.push('right');
+    if (str.includes('l')) level.tools.push('left');
 }
 
 /**

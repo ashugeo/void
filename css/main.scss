@@ -127,7 +127,7 @@ main {
             .step {
                 cursor: pointer;
                 background-color: #f2f3f4;
-                transition: all .2s ease;
+                transition: background-color .2s ease, border-color .2s ease;
 
                 &.selected {
                     outline: 3px solid black;
@@ -235,7 +235,7 @@ main {
                 }
 
                 &.color {
-                    &[data-color="1"] {
+                    &[data-color="2"] {
                         box-shadow: 0 4px 0px #40ab2b;
 
                         &:active {
@@ -243,7 +243,7 @@ main {
                         }
                     }
 
-                    &[data-color="2"] {
+                    &[data-color="3"] {
                         box-shadow: 0 4px 0px #1495ff;
 
                         &:active {
@@ -251,7 +251,7 @@ main {
                         }
                     }
 
-                    &[data-color="3"] {
+                    &[data-color="4"] {
                         box-shadow: 0 4px 0px #cc9c00;
 
                         &:active {
@@ -270,15 +270,15 @@ main {
     }
 }
 
-[data-color="1"] {
+[data-color="2"] {
     background-color: #50ce55 !important;
 }
 
-[data-color="2"] {
+[data-color="3"] {
     background-color: #47adff !important;
 }
 
-[data-color="3"] {
+[data-color="4"] {
     background-color: #ffc107 !important;
 }
 
