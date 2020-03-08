@@ -37,10 +37,7 @@ function preload() {
 
     // str = '111s30001s021301s00w4h4x0y0d1f4arlc12';
 
-    const str = location.search.replace('?', '') || '1w1h1x0y0d1';
-
-    if (str) loadLevel(str);
-    else return;
+    loadLevel();
 
     // Create and position hero
     hero = new Hero(level.hero.x, level.hero.y, level.hero.dir);
@@ -48,23 +45,38 @@ function preload() {
     // Display functions slots in UI
     const $functions = $('.functions');
     level.funcs.forEach((func, f) => {
-        $functions.append(`<div class="function"><span>f${f + 1}</span>${'<div class="step"></div>'.repeat(func)}</div>`);
+        $functions.append(`<div class="function"><span>f${f + 1}</span>${'<div class="step"></div>'.repeat(func)}${editor ? '<div class="step-add"></div><div class="delete"></div>' : ''}</div>`);
     });
+
+    if (editor) $functions.append('<div class="function"><span></span><div class="step-add"></div><div class="delete"></div></div>');
 
     const $tools = $('.tools');
 
     // Display colors in UI
-    let colors = '<div class="row">';
+    let colors = '<div class="row" id="colors">';
     for (const color of level.colors) {
         colors += `<div class="color" data-color="${color + 1}"></div>`;
     }
+
+    if (editor) {
+        for (let c = 2; c <= 4; c += 1) {
+            colors += `<div class="color" data-color="${c}"></div>`;
+        }
+    }
+
     colors += '</div>';
     $tools.prepend(colors);
 
     // Display tools in UI
-    let tools = '<div class="row">';
+    let tools = '<div class="row" id="tools">';
     for (const tool of level.tools) {
         tools += `<div class="tool" data-tool="${tool}"></div>`;
+    }
+
+    if (editor) {
+        for (const tool of ['forward', 'right', 'left']) {
+            tools += `<div class="tool" data-tool="${tool}"></div>`;
+        }
     }
 
     for (let f of Object.keys(level.funcs)) {
@@ -269,9 +281,10 @@ function star(x, y, radius1, radius2, npoints) {
 
 /**
  * Turn level string into JSON
- * @param {String} str string representation of level
  */
-function loadLevel(str) {
+function loadLevel() {
+    const str = location.search.replace('?', '') || '1w1h1x0y0d1f1';
+
     // Find map substring
     const map = str.split('w')[0];
     
@@ -479,6 +492,7 @@ $(document).on('click', '.action', e => {
 
 function play($el) {
     if (state === 'stopped') {
+        if (editor) loadLevel();
         loadFuncs();
         
         // Timeline is not empty, play it
@@ -566,9 +580,56 @@ $(document).on('click', '#editor-tools', e => {
     e.stopPropagation();
 
     const $el = $(e.target);
+    if ($el.attr('data-tool')) tool = $el.attr('data-tool');
+    else return;
+
     $('#editor-tools .selected').removeClass('selected');
     $el.addClass('selected');
-    tool = $el.attr('data-tool');
+});
+
+$(document).on('click', '.step-add', e => {
+    const $el = $(e.target);
+    const $function = $el.closest('.function');
+
+    // Add step before [+] button
+    $el.before('<div class="step"></div>');
+
+    // Fill span
+    const $span = $function.find('span');
+    const f = $('.function').length;
+    if ($span.html() === '') $span.html(`f${f}`);
     
-    console.log(tool);
+    // Last function, create it
+    if ($function.is(':last-child')) {
+        // Add function in tools
+        $('#tools').append(`<div class="tool" data-tool="f${f}"></div>`);
+
+        // Add next possible function
+        $function.after(`<div class="function"><span></span><div class="step-add"></div><div class="delete"></div></div>`);
+    }
+});
+
+$(document).on('click', '.delete', e => {
+    const $step = $('.step.selected');
+    const $function = $step.closest('.function');
+    
+    // Prevent removing last remaining step
+    if ($('.step').length > 1) {
+        // Select previous previous or next step
+        if ($step.prev(('.step')).length) $step.prev(('.step')).addClass('selected');
+        else if ($step.next(('.step')).length) $step.next(('.step')).addClass('selected');
+        
+        // Delete step
+        $step.remove();
+    }
+
+    if (!$function.find('.step').length) {
+        // Funtion empty, remove it
+        $function.remove();
+
+        // Re-index functions
+        $('.function:not(:last-child)').each((id, el) => {
+            $(el).find('span').html(`f${id + 1}`);
+        });
+    }
 });
