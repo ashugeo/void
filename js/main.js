@@ -7,6 +7,7 @@ const speed = 1000;
 const debug = false;
 
 const colors = [null, '#edeeef', '#50ce55', '#47adff', '#ffc107', '#c44dff'];
+const darkColors = [null, '#2b4454', '#50ce55', '#47adff', '#ffc107', '#c44dff'];
 
 const board = [];
 let funcs;
@@ -106,7 +107,7 @@ function draw() {
         for (let i = -20; i < 20; i += 1) {
             const cell = board.find(c => c.x === j && c.y === i)
             if (!cell) continue;
-            
+
             if (dark) stroke(30, 150, 255, 1);
             else stroke(50, 100, 200, 1);
             for (let y = -2; y <= 2; y += 1) {
@@ -224,9 +225,11 @@ class Cell {
 
         if (this.color) {
             noStroke();
-            fill(220);
+            if (dark) fill('#18262e');
+            else fill(220);
             rect(0, gridSize, gridSize, 4);
-            fill(colors[this.color]);
+            if (dark) fill(darkColors[this.color]);
+            else fill(colors[this.color]);
             stroke(0, 50);
             rect(0, 0, gridSize, gridSize);
         }

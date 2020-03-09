@@ -20,10 +20,14 @@ body {
     &.dark {
         background-color: #1a2a33;
 
+        [data-color="1"] {
+            background-color: #2b4454 !important;
+        }
+
         #ui-wrapper {
             .functions-wrap {
                 .function {
-                    .step {
+                    [class^="step"] {
                         background-color: rgba(255,255,255,.05);
                         border-color: #474f54;
 
@@ -39,6 +43,10 @@ body {
 
                     span {
                         color: white;
+                    }
+
+                    .delete {
+                        color: rgba(255,255,255,.8);
                     }
                 }
             }
@@ -64,10 +72,27 @@ body {
 
             .tools {
                 .row {
-                    >div {
+                    > div {
                         background-color: #2b4554;
                         color: white;
                         box-shadow: 0 4px 0px #18262f;
+                    }
+                }
+            }
+        }
+
+        #canvas-wrapper {
+            #editor-tools {
+                .row {
+                    > div {
+                        &[data-tool="star"],
+                        &[data-tool="hero"] {
+                            background-color: #2b4454;
+                        }
+
+                        &.selected {
+                            outline-color: #73add2;
+                        }
                     }
                 }
             }
@@ -126,16 +151,16 @@ main {
                 }
 
                 &.selected {
-                    outline: 3px solid black;
+                    outline: 4px solid black;
                     z-index: 1;
                 }
 
                 &[data-tool="star"] {
-                    background: #eaebed url(../img/star.jpg) center center / 80% 80% no-repeat;
+                    background: #eaebed url(../img/star.png) center center / 100% 100% no-repeat;
                 }
 
                 &[data-tool="hero"] {
-                    background: #eaebed url(../img/hero.jpg) center center / 80% 80% no-repeat;
+                    background: #eaebed url(../img/hero.png) center center / 100% 100% no-repeat;
                 }
             }
         }
@@ -222,12 +247,12 @@ main {
                 cursor: pointer;
                 pointer-events: none;
                 opacity: 0;
+                color: rgba(0,0,0,.8);
 
                 &::after {
                     content: "✕";
                     font-weight: bold;
                     font-size: 12px;
-                    color: rgba(0,0,0,.8);
                 }
             }
         }
