@@ -2,7 +2,7 @@ const gridSize = 40;
 let rows;
 let cols;
 
-const speed = 1000;
+const speed = 300;
 
 const debug = false;
 
@@ -191,11 +191,11 @@ class Hero {
     }
 
     right() {
-        this.dir += 1;
+        this.dir = (4 + this.dir + 1) % 4;
     }
 
     left() {
-        this.dir -= 1;
+        this.dir = (4 + this.dir - 1) % 4;
     }
 
     reset() {
