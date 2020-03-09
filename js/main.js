@@ -143,7 +143,7 @@ $(document).on('click', 'canvas', e => {
         else if (cell.color !== parseInt(tool)) cell.color = parseInt(tool);
         else board.splice(board.indexOf(cell), 1);
 
-        const colors = [...new Set(board.map(cell => cell.color).filter(d => d > 1))];
+        const colors = [...new Set(board.map(cell => cell.color).filter(d => d > 1))].sort();
         if (colors.length !== $('#colors .color').length) {
             $('#colors').html(colors.map(c => `<div class="color" data-color="${c}"></div>`));
         }
@@ -301,7 +301,7 @@ function loadLevel() {
 
     // Find level functions and colors
     level.funcs = str.match(/f\d+/g) ? str.match(/f\d+/g).map(d => parseInt(d.replace('f', ''))) : [];
-    level.colors = [...new Set(cells.map(d => parseInt(d.replace('s', ''))).filter(d => d > 1))];
+    level.colors = [...new Set(cells.map(d => parseInt(d.replace('s', ''))).filter(d => d > 1))].sort();
 
     // Find level tools
     if (str.includes('a')) level.tools.push('forward');
