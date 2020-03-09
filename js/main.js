@@ -30,7 +30,7 @@ const level = {
     tools: []
 };
 
-const editor = location.pathname.includes('/editor/');
+const edit = location.pathname.includes('/edit/');
 let tool = '1';
 
 function preload() {
@@ -44,10 +44,10 @@ function preload() {
     // Display functions slots in UI
     const $functions = $('.functions');
     level.funcs.forEach((func, f) => {
-        $functions.append(`<div class="function"><span>f${f + 1}</span>${'<div class="step"></div>'.repeat(func)}${editor ? '<div class="step-add"></div><div class="delete"></div>' : ''}</div>`);
+        $functions.append(`<div class="function"><span>f${f + 1}</span>${'<div class="step"></div>'.repeat(func)}${edit ? '<div class="step-add"></div><div class="delete"></div>' : ''}</div>`);
     });
 
-    if (editor) $functions.append('<div class="function"><span></span><div class="step-add"></div><div class="delete"></div></div>');
+    if (edit) $functions.append('<div class="function"><span></span><div class="step-add"></div><div class="delete"></div></div>');
 
     const $tools = $('.tools');
 
@@ -123,7 +123,7 @@ function draw() {
     for (const cell of board) cell.display();
     if (hero) hero.display();
 
-    if (editor) {
+    if (edit) {
         const x = Math.floor((mouseX - oX) / gridSize);
         const y = Math.floor((mouseY - oY) / gridSize);
         hoveredCell = { x, y };
@@ -131,7 +131,7 @@ function draw() {
 }
 
 $(document).on('click', 'canvas', e => {
-    if (!editor) return;
+    if (!edit) return;
 
     const x = hoveredCell.x;
     const y = hoveredCell.y;
@@ -529,7 +529,7 @@ $(document).on('click', '.action', e => {
 
 function play($el) {
     if (state === 'stopped') {
-        if (editor) loadLevel();
+        if (edit) loadLevel();
         loadFuncs();
         
         // Timeline is not empty, play it
@@ -613,14 +613,14 @@ function keyPressed() {
     }
 }
 
-$(document).on('click', '#editor-tools', e => {
+$(document).on('click', '#edit-tools', e => {
     e.stopPropagation();
 
     const $el = $(e.target);
     if ($el.attr('data-tool')) tool = $el.attr('data-tool');
     else return;
 
-    $('#editor-tools .selected').removeClass('selected');
+    $('#edit-tools .selected').removeClass('selected');
     $el.addClass('selected');
 });
 

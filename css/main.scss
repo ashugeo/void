@@ -82,7 +82,7 @@ body {
         }
 
         #canvas-wrapper {
-            #editor-tools {
+            #edit-tools {
                 .row {
                     > div {
                         &[data-tool="star"],
@@ -126,7 +126,7 @@ main {
     flex: 1;
     overflow: hidden;
 
-    #editor-tools {
+    #edit-tools {
         position: absolute;
         bottom: 0;
         z-index: 1;
