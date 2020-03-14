@@ -17,6 +17,7 @@ let clickedCell = {};
 let selectedCell = {};
 
 let hero;
+let heroLoop;
 
 let state = 'stopped';
 let dark = false;
@@ -37,6 +38,8 @@ let oX;
 let oY;
 let tX;
 let tY;
+
+let winningConfigs = [];
 
 function preload() {
     $timeline = $('.timeline');
@@ -96,11 +99,14 @@ function setup() {
     tX = oX;
     tY = oY;
 
+    // Create board from level
     for (let y = 0; y < rows; y += 1) {
         for (let x = 0; x < cols; x += 1) {
             if (level.map[y][x] !== '0') board.push(new Cell(x, y, level.map[y][x]));
         }
     }
+
+    if (edit) solve();
 }
 
 function draw() {
@@ -181,19 +187,18 @@ $(document).on('click', 'canvas', e => {
             cell.star = !cell.star;
         } else if (tool === 'hero') {
             // Hero is here, rotate it
-            if (hero.x === x && hero.y === y) hero.dir = (hero.dir + 1) % 4;
+            if (hero.x === x && hero.y === y) hero.setOrigin(x, y, (hero.dir + 1) % 4);
+
             // Otherwise move hero here
-            else {
-                hero.x = x;
-                hero.y = y;
-            }
+            else hero.setOrigin(x, y, hero.dir);
         }
     }
 
     // Sort cells vertically for drawing z-index consistency
     board.sort((a, b) => a.y > b.y ? 1 : -1);
-
+    
     updateURL();
+    solve();
 });
 
 class Hero {
@@ -233,6 +238,13 @@ class Hero {
         this.x = this.startX;
         this.y = this.startY;
         this.dir = this.startDir;
+    }
+
+    setOrigin(x, y, dir) {
+        this.startX = x;
+        this.startY = y;
+        this.startDir = dir;
+        this.reset();
     }
 }
 
@@ -404,16 +416,12 @@ function loadFuncs() {
 
         $function.find('.step').each((id, el) => {
             const $step = $(el);
-            const tool = $step.attr('data-tool');
-            if (!tool) return;
+            const tool = $step.attr('data-tool') || '';
             const color = parseInt($step.attr('data-color')) || 0;
             func.push({ tool, color });
         });
         funcs.push(func);
     });
-
-    // Load f1 to timeline and play it
-    buildTimeline(funcs[0]);
 }
 
 function buildTimeline(func) {
@@ -447,14 +455,25 @@ function funcToHTML(func) {
     return html;
 }
 
-function playStep() {
+let call = 0;
+function playStep(force = false) {
     // Action to play
     const step = timeline[0];
-
     if (!step) return;
+    
+    // Prevent exceeded maximum call stack size
+    if (force) {
+        call += 1;
+        if (call > 100) {
+            call = 0;
+            return lost();
+        }
+    }
 
     // Find cell the hero is on
     let cell = board.find(c => c.x === hero.x && c.y === hero.y);
+
+    if (!cell) return lost();
 
     // Any color, or matching color
     if (step.color === 0 || step.color === cell.color) {
@@ -475,7 +494,7 @@ function playStep() {
 
                 // Check if all stars have been collected if so, game is won
                 const stars = board.map(c => c.star && !c.starClear).filter(Boolean);
-                if (stars.length === 0) won();
+                if (stars.length === 0) return won();
             }
         } else if (step.tool === 'right') {
             // Turn right (clockwise)
@@ -484,6 +503,8 @@ function playStep() {
             // Turn left (counterclockwise)
             hero.left();
         } else if (step.tool[0] === 'f') {
+            // if (heroLoop && hero.x === heroLoop.x && hero.y === heroLoop.y && hero.dir === heroLoop.dir) return lost();
+            // else heroLoop = { x: hero.x, y: hero.y, dir: hero.dir };
             // Add function to timeline
             const func = parseInt(step.tool.replace('f', '')) - 1;
             timeline.splice(1, 0, ...funcs[func]);
@@ -494,27 +515,93 @@ function playStep() {
     // Remove action that has just been played from timeline
     timeline.shift();
 
-    setTimeout(() => {
-        if (state === 'playing') {
-            // Remove action from UI
-            $('.timeline .step:first-child').remove();
-
-            // Play next action if there's any, otherwise game is lost
-            if (timeline.length) playStep();
-            else lost();
-        }
-    }, speed);
+    if (force) {
+        // if (timeline[0] && timeline[0].tool === 'f1') return lost();
+        if (timeline.length) return playStep(true);
+        else return lost();
+    } else {
+        setTimeout(() => {
+            if (state === 'playing') {
+                // Remove action from UI
+                $('.timeline .step:first-child').remove();
+    
+                // Play next action if there's any, otherwise game is lost
+                if (timeline.length) playStep();
+                else lost();
+            }
+        }, speed);
+    }
 }
 
 function won() {
-    console.log('won');
+    // console.log('won');
     state = 'stopped';
+    return 'won';
 }
 
 function lost() {
-    console.log('lost');
+    // console.log('lost');
     state = 'stopped';
+    return 'lost';
 }
+
+function solve() {
+    winningConfigs = [];
+
+    // loadLevel();
+
+    let settings = [];
+    for (const tool of ['', ...level.tools, ...level.funcs.map((f, i) => `f${i + 1}`)]) {
+        for (const color of [0, ...level.colors]) {
+            settings.push({ tool, color });
+        }
+    }
+    
+    funcs = [];
+    funcs[0] = [];
+
+    timeline = [];
+    const timelineSave = [];
+
+    const buildStep = step => {
+        for (const setting of settings) {
+            call = 0;
+            hero.reset();
+            // console.log(hero);
+            board.filter(cell => cell.starClear).map(cell => cell.starClear = false);
+
+            timeline = [...timelineSave];
+            
+            timeline[step] = { ...setting };
+            timelineSave[step] = { ...setting };
+
+            funcs[0][step] = { ...setting };
+
+            // Store winning configurations
+            if (playStep(true) === 'won') winningConfigs.push([...timelineSave]);
+            
+            if (step + 1 < level.funcs[0]) buildStep(step + 1);
+        }
+    }
+    
+    buildStep(0);
+
+    console.log(winningConfigs);
+
+    if (winningConfigs.some(config => config.some(step => step.tool === ''))) {
+        // winningConfigs = winningConfigs.filter(config => !config.every(step => step.tool !== ''));
+        console.log(winningConfigs);
+    }
+
+    $('.solved').empty();
+    $('.solved-wrap p span').html(`${winningConfigs.length ? (winningConfigs.length > 10 ? 'Too many' : winningConfigs.length) : 'No'} way${winningConfigs.length > 1 ? 's' : ''}`)
+
+    if (winningConfigs.length <= 10) winningConfigs.forEach((config, c) => {
+        $('.solved').append(`<div>${c + 1}</div>`);
+    });
+}
+
+const sleep = ms => new Promise(res => setTimeout(res, ms));
 
 $(document).on('click', '.functions .step', e => {
     // Select a step by clicking on it
@@ -564,6 +651,9 @@ function play($el) {
     if (state === 'stopped') {
         if (edit) loadLevel();
         loadFuncs();
+
+        // Load f1 to timeline
+        buildTimeline(funcs[0]);
         
         // Timeline is not empty, play it
         if (timeline[0]) setTimeout(() => playStep(), speed);
@@ -679,6 +769,7 @@ $(document).on('click', '.step-add', e => {
     }
 
     updateURL();
+    solve();
 });
 
 $(document).on('click', '.delete', e => {
@@ -706,4 +797,21 @@ $(document).on('click', '.delete', e => {
     }
 
     updateURL();
+    solve();
+});
+
+$(document).on('mouseenter', '.solved div', e => {
+    loadFuncs();
+
+    const index = $(e.target).index();
+    
+    winningConfigs[index].forEach((step, i) => {
+        $('.functions .function').eq(0).find('.step').eq(i).attr('data-tool', step.tool).attr('data-color', step.color ? step.color : '');
+    });
+});
+
+$(document).on('mouseleave', '.solved div', e => {
+    funcs[0].forEach((step, i) => {
+        $('.functions .function').eq(0).find('.step').eq(i).attr('data-tool', step.tool).attr('data-color', step.color ? step.color : '');
+    });
 });
