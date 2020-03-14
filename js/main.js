@@ -139,19 +139,26 @@ $(document).on('click', 'canvas', e => {
     const cell = board.find(c => c.x === x && c.y === y);
 
     if (!isNaN(parseInt(tool))) {
+        // No cell here, create new cell
         if (!cell) board.push(new Cell(x, y, tool));
+        // Already a cell but another color, change color
         else if (cell.color !== parseInt(tool)) cell.color = parseInt(tool);
+        // Otherwise, remove cell‹
         else board.splice(board.indexOf(cell), 1);
 
+        // Display only needed colors for solving
         const colors = [...new Set(board.map(cell => cell.color).filter(d => d > 1))].sort();
         if (colors.length !== $('#colors .color').length) {
             $('#colors').html(colors.map(c => `<div class="color" data-color="${c}"></div>`));
         }
     } else if (cell) {
         if (tool === 'star') {
+            // Set down/remove star
             cell.star = !cell.star;
         } else if (tool === 'hero') {
+            // Hero is here, rotate it
             if (hero.x === x && hero.y === y) hero.dir = (hero.dir + 1) % 4;
+            // Otherwise move hero here
             else {
                 hero.x = x;
                 hero.y = y;
@@ -311,6 +318,8 @@ function loadLevel() {
 
 function boardToString() {
     let str = '';
+
+    if (!board.length) return str;
 
     const top = board.sort((a, b) => a.y > b.y ? 1 : -1)[0].y;
     const right = board.sort((a, b) => a.x < b.x ? 1 : -1)[0].x;
