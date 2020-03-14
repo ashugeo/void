@@ -1,6 +1,4 @@
-# Functions
-
-*Temporary name.*
+# Void
 
 Yet another recreation of a puzzle game. Build an algorithm to move a hero around a map and collect all stars to win.
 
