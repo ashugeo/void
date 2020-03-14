@@ -33,6 +33,11 @@ const level = {
 const edit = location.pathname.includes('/edit/');
 let tool = '1';
 
+let oX;
+let oY;
+let tX;
+let tY;
+
 function preload() {
     $timeline = $('.timeline');
 
@@ -85,6 +90,12 @@ function setup() {
     rows = level.map.length;
     cols = level.map[0].length;
 
+    oX = Math.floor(width / 2 - cols / 2 * gridSize);
+    oY = Math.floor(height / 2 - rows / 2 * gridSize);
+
+    tX = oX;
+    tY = oY;
+
     for (let y = 0; y < rows; y += 1) {
         for (let x = 0; x < cols; x += 1) {
             if (level.map[y][x] !== '0') board.push(new Cell(x, y, level.map[y][x]));
@@ -98,10 +109,10 @@ function draw() {
     else background(255, 50);
     noFill();
 
-    const oX = Math.floor(width / 2 - cols * gridSize / 2);
-    const oY = Math.floor(height / 2 - rows * gridSize / 2);
+    tX += (oX - tX) / 10;
+    tY += (oY - tY) / 10;
 
-    translate(oX, oY);
+    translate(tX, tY);
 
     for (let j = -20; j < 20; j += 1) {
         for (let i = -20; i < 20; i += 1) {
@@ -145,6 +156,19 @@ $(document).on('click', 'canvas', e => {
         else if (cell.color !== parseInt(tool)) cell.color = parseInt(tool);
         // Otherwise, remove cell‹
         else board.splice(board.indexOf(cell), 1);
+
+        if (board.length) {
+            const top = board.sort((a, b) => a.y > b.y ? 1 : -1)[0].y;
+            const right = board.sort((a, b) => a.x < b.x ? 1 : -1)[0].x;
+            const bottom = board.sort((a, b) => a.y < b.y ? 1 : -1)[0].y;
+            const left = board.sort((a, b) => a.x > b.x ? 1 : -1)[0].x;
+
+            const x = left + (right - left + 1) / 2;
+            const y = top + (bottom - top + 1) / 2;
+
+            oX = Math.floor(width / 2 - x * gridSize);
+            oY = Math.floor(height / 2 - y * gridSize);
+        }
 
         // Display only needed colors for solving
         const colors = [...new Set(board.map(cell => cell.color).filter(d => d > 1))].sort();
