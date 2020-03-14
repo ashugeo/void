@@ -17,7 +17,6 @@ let clickedCell = {};
 let selectedCell = {};
 
 let hero;
-let heroLoop;
 
 let state = 'stopped';
 let dark = false;
@@ -40,6 +39,10 @@ let tX;
 let tY;
 
 let winningConfigs = [];
+
+const solver = new Worker('../js/solve.js');
+
+solver.onmessage = event => solved(event.data);
 
 function preload() {
     $timeline = $('.timeline');
@@ -503,8 +506,6 @@ function playStep(force = false) {
             // Turn left (counterclockwise)
             hero.left();
         } else if (step.tool[0] === 'f') {
-            // if (heroLoop && hero.x === heroLoop.x && hero.y === heroLoop.y && hero.dir === heroLoop.dir) return lost();
-            // else heroLoop = { x: hero.x, y: hero.y, dir: hero.dir };
             // Add function to timeline
             const func = parseInt(step.tool.replace('f', '')) - 1;
             timeline.splice(1, 0, ...funcs[func]);
@@ -546,62 +547,27 @@ function lost() {
 }
 
 function solve() {
-    winningConfigs = [];
+    $('.solved-wrap p').html('Solving<span>.</span><span>.</span><span>.</span>');
 
-    // loadLevel();
-
-    let settings = [];
-    for (const tool of ['', ...level.tools, ...level.funcs.map((f, i) => `f${i + 1}`)]) {
-        for (const color of [0, ...level.colors]) {
-            settings.push({ tool, color });
-        }
-    }
-    
-    funcs = [];
-    funcs[0] = [];
-
-    timeline = [];
-    const timelineSave = [];
-
-    const buildStep = step => {
-        for (const setting of settings) {
-            call = 0;
-            hero.reset();
-            // console.log(hero);
-            board.filter(cell => cell.starClear).map(cell => cell.starClear = false);
-
-            timeline = [...timelineSave];
-            
-            timeline[step] = { ...setting };
-            timelineSave[step] = { ...setting };
-
-            funcs[0][step] = { ...setting };
-
-            // Store winning configurations
-            if (playStep(true) === 'won') winningConfigs.push([...timelineSave]);
-            
-            if (step + 1 < level.funcs[0]) buildStep(step + 1);
-        }
-    }
-    
-    buildStep(0);
-
-    console.log(winningConfigs);
-
-    if (winningConfigs.some(config => config.some(step => step.tool === ''))) {
-        // winningConfigs = winningConfigs.filter(config => !config.every(step => step.tool !== ''));
-        console.log(winningConfigs);
-    }
-
-    $('.solved').empty();
-    $('.solved-wrap p span').html(`${winningConfigs.length ? (winningConfigs.length > 10 ? 'Too many' : winningConfigs.length) : 'No'} way${winningConfigs.length > 1 ? 's' : ''}`)
-
-    if (winningConfigs.length <= 10) winningConfigs.forEach((config, c) => {
-        $('.solved').append(`<div>${c + 1}</div>`);
+    solver.postMessage({
+        board,
+        hero,
+        level
     });
 }
 
-const sleep = ms => new Promise(res => setTimeout(res, ms));
+function solved(data) {
+    winningConfigs = data;
+
+    const maxShown = 20;
+    
+    $('.solved').empty();
+    $('.solved-wrap p').html(`${winningConfigs.length ? (winningConfigs.length > maxShown ? 'Too many' : winningConfigs.length) : 'No'} way${winningConfigs.length > 1 ? 's' : ''} of solving this level`);
+
+    if (winningConfigs.length <= maxShown) winningConfigs.forEach((config, c) => {
+        $('.solved').append(`<div>${c + 1}</div>`);
+    });
+}
 
 $(document).on('click', '.functions .step', e => {
     // Select a step by clicking on it
