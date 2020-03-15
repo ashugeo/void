@@ -38,11 +38,13 @@ let oY;
 let tX;
 let tY;
 
-let winningConfigs = [];
+let winningFuncs = [];
 
-const solver = new Worker('../js/solve.js');
+// solver.onmessage = e => {
+//     const data = e.data;
 
-solver.onmessage = event => solved(event.data);
+//     $('.function').eq(data.f).find('.step').eq(data.s).attr('data-tool', data.setting.tool).attr('data-color', data.setting.color ? data.setting.color : '');
+// };
 
 function preload() {
     $timeline = $('.timeline');
@@ -334,6 +336,7 @@ function loadLevel() {
     const height = parseInt(str.split('h')[1].split('x')[0]);
 
     // Turn 1D array of cells to 2D map array
+    level.map = [];
     for (let y = 0; y < height; y += 1) {
         let row = [];
         for (let x = 0; x < width; x += 1) row.push(cells[y * width + x]);
@@ -350,9 +353,9 @@ function loadLevel() {
     level.colors = [...new Set(cells.map(d => parseInt(d.replace('s', ''))).filter(d => d > 1))].sort();
 
     // Find level tools
-    if (str.includes('a')) level.tools.push('forward');
-    if (str.includes('r')) level.tools.push('right');
-    if (str.includes('l')) level.tools.push('left');
+    if (str.includes('a') && !level.tools.includes('forward')) level.tools.push('forward');
+    if (str.includes('r') && !level.tools.includes('right')) level.tools.push('right');
+    if (str.includes('l') && !level.tools.includes('left')) level.tools.push('left');
 }
 
 function boardToString() {
@@ -546,9 +549,18 @@ function lost() {
     return 'lost';
 }
 
+let solver;
+
 function solve() {
     $('.solved-wrap p').html('Solving<span>.</span><span>.</span><span>.</span>');
 
+    loadLevel();
+
+    if (solver) solver.terminate();
+    solver = new Worker('../js/solve.js');
+
+    solver.onmessage = e => solved(e.data);
+    
     solver.postMessage({
         board,
         hero,
@@ -557,14 +569,13 @@ function solve() {
 }
 
 function solved(data) {
-    winningConfigs = data;
-
+    winningFuncs = data;
     const maxShown = 20;
     
     $('.solved').empty();
-    $('.solved-wrap p').html(`${winningConfigs.length ? (winningConfigs.length > maxShown ? 'Too many' : winningConfigs.length) : 'No'} way${winningConfigs.length > 1 ? 's' : ''} of solving this level`);
+    $('.solved-wrap p').html(`${winningFuncs.length ? (winningFuncs.length > maxShown ? 'Too many' : winningFuncs.length) : 'No'} way${winningFuncs.length > 1 ? 's' : ''} of solving this level`);
 
-    if (winningConfigs.length <= maxShown) winningConfigs.forEach((config, c) => {
+    if (winningFuncs.length <= maxShown) winningFuncs.forEach((config, c) => {
         $('.solved').append(`<div>${c + 1}</div>`);
     });
 }
@@ -727,8 +738,13 @@ $(document).on('click', '.step-add', e => {
     
     // Last function, create it
     if ($function.is(':last-child')) {
+        // Remove functions
+        $('#tools [data-tool^="f"]').remove();
+        
         // Add function in tools
-        $('#tools').append(`<div class="tool" data-tool="f${f}"></div>`);
+        for (let i = 0; i < f; i += 1) {
+            $('#tools').append(`<div class="tool" data-tool="f${i + 1}"></div>`);
+        }
 
         // Add next possible function
         $function.after(`<div class="function"><span></span><div class="step-add"></div><div class="delete"></div></div>`);
@@ -760,6 +776,14 @@ $(document).on('click', '.delete', e => {
         $('.function:not(:last-child)').each((id, el) => {
             $(el).find('span').html(`f${id + 1}`);
         });
+
+        // Remove functions
+        $('#tools [data-tool^="f"]').remove();
+        
+        // Add function in tools
+        for (let i = 0; i < $('.function').length - 1; i += 1) {
+            $('#tools').append(`<div class="tool" data-tool="f${i + 1}"></div>`);
+        }
     }
 
     updateURL();
@@ -770,14 +794,17 @@ $(document).on('mouseenter', '.solved div', e => {
     loadFuncs();
 
     const index = $(e.target).index();
-    
-    winningConfigs[index].forEach((step, i) => {
-        $('.functions .function').eq(0).find('.step').eq(i).attr('data-tool', step.tool).attr('data-color', step.color ? step.color : '');
+    winningFuncs[index].forEach((func, f) => {
+        func.forEach((step, s) => {
+            $('.functions .function').eq(f).find('.step').eq(s).attr('data-tool', step.tool).attr('data-color', step.color ? step.color : '');
+        });
     });
 });
 
 $(document).on('mouseleave', '.solved div', e => {
-    funcs[0].forEach((step, i) => {
-        $('.functions .function').eq(0).find('.step').eq(i).attr('data-tool', step.tool).attr('data-color', step.color ? step.color : '');
-    });
+    funcs.forEach((func, f) => {
+        funcs[f].forEach((step, s) => {
+            $('.functions .function').eq(f).find('.step').eq(s).attr('data-tool', step.tool).attr('data-color', step.color ? step.color : '');
+        });
+    })
 });
