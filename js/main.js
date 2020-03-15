@@ -323,7 +323,7 @@ function star(x, y, radius1, radius2, npoints) {
  * Turn level string into JSON
  */
 function loadLevel() {
-    const str = location.search.replace('?', '') || '1w1h1x0y0d1f1';
+    const str = location.search.replace('?', '') || '1w1h1x0y0d1f1arl';
 
     // Find map substring
     const map = str.split('w')[0];
@@ -602,7 +602,7 @@ $(document).on('click', '.color', e => {
     }
 });
 
-$(document).on('click', '.tool', e => {
+$(document).on('click', '#tools .tool', e => {
     // Add or remove action to selected step
     const $el = $(e.target);
     const tool = $el.attr('data-tool');
@@ -799,6 +799,10 @@ $(document).on('mouseenter', '.solved div', e => {
             $('.functions .function').eq(f).find('.step').eq(s).attr('data-tool', step.tool).attr('data-color', step.color ? step.color : '');
         });
     });
+});
+
+$(document).on('click', '.solved div', e => {
+    loadFuncs();
 });
 
 $(document).on('mouseleave', '.solved div', e => {
